@@ -1,104 +1,532 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Embed Scraper</title>
-    <style>
-        body { font-family: sans-serif; background-color: #121212; color: #fff; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; text-align: center; }
-        
-        input { padding: 15px; width: 60%; border-radius: 30px; border: none; font-size: 16px; outline: none; }
-        button { padding: 15px 30px; border-radius: 30px; border: none; background: #07a081; color: white; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        button:hover { background: #05856b; transform: scale(1.05); }
-        
-        /* Grid hiển thị video */
-        .video-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 40px; }
-        
-        .video-card { background: #1e1e1e; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        
-        /* CSS cho trình phát video */
-        video { width: 100%; height: 200px; object-fit: cover; background: black; }
-        
-        .card-info { padding: 15px; text-align: left; }
-        .card-info h3 { font-size: 16px; margin: 0 0 10px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .download-btn { display: inline-block; text-decoration: none; color: #07a081; font-size: 14px; border: 1px solid #07a081; padding: 5px 10px; border-radius: 5px; }
-        
-        .loader { display: none; margin-top: 20px; font-size: 18px; color: #aaa; }
-    </style>
+  <meta charset="UTF-8" />
+  <title>YouGlish – Multi Video + Clean Transcript</title>
+  <style>
+    :root {
+      --primary: #1677ff;
+      --bg: #f5f5f5;
+      --card-bg: #ffffff;
+      --border: #e5e7eb;
+      --text-main: #111827;
+      --text-sub: #6b7280;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 16px 40px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+
+    .search-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .search-row input[type="text"] {
+      min-width: 260px;
+      padding: 8px 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      outline: none;
+    }
+
+    .search-row input[type="text"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.2);
+    }
+
+    .search-row select {
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    .search-row button {
+      padding: 8px 16px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .search-row button[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .search-row button:hover:not([disabled]) {
+      background: #125ecc;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+
+    .card h2 {
+      font-size: 18px;
+      margin: 0 0 8px;
+    }
+
+    .meta-row {
+      font-size: 14px;
+      margin: 4px 0;
+    }
+
+    .meta-label {
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-right: 4px;
+    }
+
+    .meta-value {
+      color: var(--text-main);
+      word-break: break-word;
+    }
+
+    .status {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+
+    .status strong {
+      color: var(--primary);
+    }
+
+    .widget-wrapper {
+      border-radius: 10px;
+      overflow: hidden;
+      background: #000;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+    }
+
+    #yg-widget {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    /* List nhiều video */
+    .videos-list {
+      margin-top: 24px;
+    }
+
+    .video-item {
+      border-top: 1px solid #e5e7eb;
+      padding-top: 12px;
+      margin-top: 12px;
+    }
+
+    .video-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .video-title {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .video-transcript {
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 8px 10px;
+      border: 1px solid #e5e7eb;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: #f3f4f6;
+      color: #4b5563;
+    }
+  </style>
 </head>
 <body>
+  <div class="page">
+    <h1>YouGlish – Multi Video + Clean Transcript</h1>
 
-<div class="container">
-    <h1>🎥 Direct Video Embedder</h1>
-    <p>Nhập từ khóa để lấy video có thể phát trực tiếp</p>
-    
-    <div>
-        <input type="text" id="keyword" placeholder="Ví dụ: Ocean, Technology, Rain...">
-        <button onclick="getVideos()">Cào Video</button>
+    <!-- Search area -->
+    <div class="search-row">
+      <input
+        id="queryInput"
+        type="text"
+        placeholder="Nhập từ/cụm từ (vd: courage, opportunity...)"
+      />
+      <select id="langSelect">
+        <option value="english">English</option>
+        <option value="vietnamese">Vietnamese</option>
+        <option value="french">French</option>
+        <option value="spanish">Spanish</option>
+      </select>
+      <button id="searchBtn" disabled>🔍 Search</button>
     </div>
 
-    <div class="loader" id="loader">
-        Đang truy cập vào từng trang để lấy link gốc... (Sẽ mất khoảng 5-10 giây) ⏳
+    <div class="layout">
+      <!-- LEFT: Player + meta -->
+      <div>
+        <div class="card" style="margin-bottom: 12px">
+          <h2>Current Video</h2>
+
+          <div class="meta-row">
+            <span class="meta-label">Title:</span>
+            <span class="meta-value" id="metaTitle">Chưa có kết quả</span>
+          </div>
+
+          <div class="meta-row">
+            <span class="meta-label">Category:</span>
+            <span class="meta-value" id="metaCategory">
+              <span class="pill">–</span>
+            </span>
+          </div>
+
+          <div class="meta-row">
+            <span class="meta-label">Video URL:</span>
+            <span class="meta-value" id="metaVideoUrl">–</span>
+          </div>
+
+          <div class="status" id="metaStatus">Đang tải YouGlish widget...</div>
+        </div>
+
+        <!-- Player -->
+        <div class="widget-wrapper">
+          <div id="yg-widget"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Danh sách nhiều video + transcript -->
+      <div class="card">
+        <h2>All Videos & Clean Transcript</h2>
+        <div class="status" style="margin-bottom: 8px;">
+          Mỗi khi bạn bấm Next/Previous trong player, video mới sẽ được thêm bên dưới.
+        </div>
+        <div id="videosList" class="videos-list">
+          <div class="video-item">
+            <div class="video-title">Chưa có video nào.</div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div class="video-grid" id="grid"></div>
-</div>
+  <script>
+    // Load widget.js async
+    (function loadYouglishScript() {
+      var tag = document.createElement("script");
+      tag.src = "https://youglish.com/public/emb/widget.js";
+      var firstScriptTag = document.getElementsByTagName("script")[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    })();
 
-<script>
-    async function getVideos() {
-        const keyword = document.getElementById('keyword').value;
-        const grid = document.getElementById('grid');
-        const loader = document.getElementById('loader');
+    let widget = null;
+    let isReady = false;
 
-        if(!keyword) return alert("Nhập từ khóa đi bạn ơi!");
+    const queryInput = document.getElementById("queryInput");
+    const langSelect = document.getElementById("langSelect");
+    const searchBtn = document.getElementById("searchBtn");
 
-        grid.innerHTML = '';
-        loader.style.display = 'block';
+    const metaTitle = document.getElementById("metaTitle");
+    const metaCategory = document.getElementById("metaCategory");
+    const metaVideoUrl = document.getElementById("metaVideoUrl");
+    const metaStatus = document.getElementById("metaStatus");
+    const videosListEl = document.getElementById("videosList");
 
-        try {
-            const res = await fetch('http://localhost:3000/scrape-embed', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: keyword })
-            });
-            
-            const videos = await res.json();
-            loader.style.display = 'none';
+    // Lưu transcript theo từng video
+    // videosMap[videoId] = { index, videoId, url, transcripts: [] }
+    const videosMap = {};
+    let currentVideoId = null;
+    let currentQuery = "";
+    let videoOrder = 0;
 
-            if(videos.length === 0) {
-                grid.innerHTML = '<p>Không lấy được video nào hoặc bị chặn :(</p>';
-                return;
-            }
+    // Hàm này global, YouGlish sẽ gọi khi API sẵn sàng
+    function onYouglishAPIReady() {
+      console.log("YouGlish API ready");
 
-            videos.forEach(vid => {
-                const card = `
-                    <div class="video-card">
-                        <iframe 
-                            width="100%" 
-                            height="200px" 
-                            src="${vid.embedUrl}" 
-                            frameborder="0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                            allowfullscreen>
-                        </iframe>
-                        
-                        <div class="card-info">
-                            <h3>${vid.title}</h3>
-                            <p>Kênh: <strong>${vid.channel}</strong></p>
-                            <a href="https://www.youtube.com/watch?v=${vid.videoId}" target="_blank" class="download-btn">🔗 Xem trên YouTube</a>
-                        </div>
-                    </div>
-                `;
-                grid.innerHTML += card;
-            });
+      widget = new YG.Widget("yg-widget", {
+        width: 800,
+        components: 4 + 8 + 64, // title + caption + controls
+        autoStart: 1,
+        events: {
+          onFetchDone,
+          onVideoChange,
+          onCaptionChange,
+          onError,
+        },
+      });
 
-        } catch (err) {
-            console.error(err);
-            loader.innerHTML = "Lỗi kết nối server!";
-        }
+      isReady = true;
+      searchBtn.disabled = false;
+      metaStatus.textContent = "Widget đã sẵn sàng. Nhập từ và bấm Search.";
     }
-</script>
 
+    // Sau khi fetch xong cho query
+    function onFetchDone(event) {
+      if (event.totalResult === 0) {
+        metaTitle.textContent = "Không tìm thấy kết quả";
+        metaCategory.innerHTML = '<span class="pill">No result</span>';
+        metaVideoUrl.textContent = "–";
+        metaStatus.textContent = "";
+        clearVideosList("Không có video nào cho query này.");
+        return;
+      }
+
+      currentQuery = event.query;
+
+      const titleText = `How to say "${event.query}" in ${event.lang} (${event.totalResult} results)`;
+      metaTitle.textContent = titleText;
+
+      const cat = event.accent
+        ? `${event.lang} – ${event.accent}`
+        : event.lang;
+      metaCategory.innerHTML = `<span class="pill">${cat}</span>`;
+
+      metaStatus.innerHTML =
+        `Có <strong>${event.totalResult}</strong> kết quả.` +
+        ` Dùng nút Next / Previous trong player để đổi video.`;
+
+      // Mỗi query mới → reset danh sách video
+      resetVideos();
+    }
+
+    // Khi đổi sang video khác
+    function onVideoChange(event) {
+      currentVideoId = event.video;
+
+      if (!currentVideoId) {
+        metaVideoUrl.textContent = "–";
+        return;
+      }
+
+      const url = `https://www.youtube.com/watch?v=${currentVideoId}`;
+      metaVideoUrl.innerHTML =
+        `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+
+      // Nếu video này chưa có trong map → thêm mới
+      if (!videosMap[currentVideoId]) {
+        videoOrder += 1;
+        videosMap[currentVideoId] = {
+          index: videoOrder,
+          videoId: currentVideoId,
+          url,
+          transcripts: [],
+        };
+      }
+
+      renderVideosList();
+    }
+
+    // Khi caption thay đổi
+    function onCaptionChange(event) {
+      if (!currentVideoId || !videosMap[currentVideoId]) return;
+
+      // Làm sạch caption
+      const raw = event.caption || "";
+
+      const clean = cleanCaptionText(raw);
+      if (!clean) return;
+
+      const arr = videosMap[currentVideoId].transcripts;
+      // Tránh bị spam lặp dòng liên tục
+      if (arr.length === 0 || arr[arr.length - 1] !== clean) {
+        arr.push(clean);
+        renderVideosList();
+      }
+    }
+
+    function onError(event) {
+      console.error("YouGlish error:", event.code);
+      metaStatus.innerHTML =
+        `<span style="color:#b91c1c">Lỗi YouGlish (code: ${event.code})</span>`;
+    }
+
+    // ===========================
+    // Helpers
+    // ===========================
+
+    function cleanCaptionText(text) {
+      // 1) Bỏ [[[ ]]]
+      let cleaned = text.replace(/\[\[\[/g, "").replace(/\]\]\]/g, "");
+
+      // 2) decode %20, %3F, ... (nếu có)
+      try {
+        cleaned = decodeURIComponent(cleaned);
+      } catch (e) {
+        // nếu decode lỗi thì bỏ qua
+      }
+
+      // 3) Bỏ ký tự control, để lại chữ, số, dấu câu cơ bản
+      cleaned = cleaned.replace(/[^\wÀ-ỹ.,?!'"() \-]/g, " ");
+
+      // 4) Gộp khoảng trắng, trim
+      cleaned = cleaned.replace(/\s+/g, " ").trim();
+
+      return cleaned;
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    function resetVideos() {
+      for (const key in videosMap) {
+        delete videosMap[key];
+      }
+      currentVideoId = null;
+      videoOrder = 0;
+      clearVideosList("Chưa có video nào. Hãy bấm Play/Next trong player.");
+    }
+
+    function clearVideosList(message) {
+      videosListEl.innerHTML =
+        `<div class="video-item"><div class="video-title">${escapeHtml(
+          message
+        )}</div></div>`;
+    }
+
+    function renderVideosList() {
+      const entries = Object.values(videosMap).sort(
+        (a, b) => a.index - b.index
+      );
+
+      if (!entries.length) {
+        clearVideosList("Chưa có video nào được xem.");
+        return;
+      }
+
+      videosListEl.innerHTML = entries
+        .map((v) => {
+          const transcriptText = v.transcripts.join(" ");
+
+          return `
+            <div class="video-item">
+              <div class="video-header">
+                <div class="video-title">
+                  Video #${v.index}
+                  <span class="badge">${currentQuery || "query"}</span>
+                </div>
+                <div>
+                  <a href="${v.url}" target="_blank" rel="noopener noreferrer">
+                    ${v.url}
+                  </a>
+                </div>
+              </div>
+              <div class="video-transcript">
+                ${transcriptText
+                  ? escapeHtml(transcriptText)
+                  : "<em>Chưa có subtitle nào được load.</em>"}
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    // ===========================
+    // Search
+    // ===========================
+    searchBtn.addEventListener("click", () => {
+      const q = queryInput.value.trim();
+      const lang = langSelect.value;
+
+      if (!q) {
+        alert("Nhập từ/cụm từ trước đã.");
+        return;
+      }
+      if (!isReady || !widget) {
+        alert("Widget chưa sẵn sàng, thử reload lại trang.");
+        return;
+      }
+
+      metaTitle.textContent = "Đang tìm kiếm...";
+      metaCategory.innerHTML = '<span class="pill">Loading...</span>';
+      metaVideoUrl.textContent = "–";
+      metaStatus.textContent = "";
+      resetVideos();
+
+      widget.fetch(q, lang);
+    });
+
+    queryInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") searchBtn.click();
+    });
+  </script>
 </body>
 </html>
