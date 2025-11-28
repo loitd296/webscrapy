@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Embed Scraper</title>
+    <style>
+        body { font-family: sans-serif; background-color: #121212; color: #fff; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; text-align: center; }
+        
+        input { padding: 15px; width: 60%; border-radius: 30px; border: none; font-size: 16px; outline: none; }
+        button { padding: 15px 30px; border-radius: 30px; border: none; background: #07a081; color: white; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        button:hover { background: #05856b; transform: scale(1.05); }
+        
+        /* Grid hiển thị video */
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 40px; }
+        
+        .video-card { background: #1e1e1e; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        
+        /* CSS cho trình phát video */
+        video { width: 100%; height: 200px; object-fit: cover; background: black; }
+        
+        .card-info { padding: 15px; text-align: left; }
+        .card-info h3 { font-size: 16px; margin: 0 0 10px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .download-btn { display: inline-block; text-decoration: none; color: #07a081; font-size: 14px; border: 1px solid #07a081; padding: 5px 10px; border-radius: 5px; }
+        
+        .loader { display: none; margin-top: 20px; font-size: 18px; color: #aaa; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎥 Direct Video Embedder</h1>
+    <p>Nhập từ khóa để lấy video có thể phát trực tiếp</p>
+    
+    <div>
+        <input type="text" id="keyword" placeholder="Ví dụ: Ocean, Technology, Rain...">
+        <button onclick="getVideos()">Cào Video</button>
+    </div>
+
+    <div class="loader" id="loader">
+        Đang truy cập vào từng trang để lấy link gốc... (Sẽ mất khoảng 5-10 giây) ⏳
+    </div>
+
+    <div class="video-grid" id="grid"></div>
+</div>
+
+<script>
+    async function getVideos() {
+        const keyword = document.getElementById('keyword').value;
+        const grid = document.getElementById('grid');
+        const loader = document.getElementById('loader');
+
+        if(!keyword) return alert("Nhập từ khóa đi bạn ơi!");
+
+        grid.innerHTML = '';
+        loader.style.display = 'block';
+
+        try {
+            const res = await fetch('http://localhost:3000/scrape-embed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: keyword })
+            });
+            
+            const videos = await res.json();
+            loader.style.display = 'none';
+
+            if(videos.length === 0) {
+                grid.innerHTML = '<p>Không lấy được video nào hoặc bị chặn :(</p>';
+                return;
+            }
+
+            videos.forEach(vid => {
+                const card = `
+                    <div class="video-card">
+                        <iframe 
+                            width="100%" 
+                            height="200px" 
+                            src="${vid.embedUrl}" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                        
+                        <div class="card-info">
+                            <h3>${vid.title}</h3>
+                            <p>Kênh: <strong>${vid.channel}</strong></p>
+                            <a href="https://www.youtube.com/watch?v=${vid.videoId}" target="_blank" class="download-btn">🔗 Xem trên YouTube</a>
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += card;
+            });
+
+        } catch (err) {
+            console.error(err);
+            loader.innerHTML = "Lỗi kết nối server!";
+        }
+    }
+</script>
+
+</body>
+</html>
